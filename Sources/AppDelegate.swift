@@ -4,6 +4,10 @@
 
  Created by Takuto Nakamura on 2019/08/06.
  Copyright © 2019 Takuto Nakamura. All rights reserved.
+
+ Modificado para EinsteinCat:
+ - Las imágenes se marcan como template (antes lo hacía el .xcassets).
+ - Gatito en la tira de control de la Touch Bar (ControlStripCat).
 */
 
 import Cocoa
@@ -17,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return (0 ..< 5).map { n in
             let image = NSImage(named: "cat_page\(n)")!
             image.size = NSSize(width: 28, height: 18)
+            image.isTemplate = true
             return image
         }
     }()
@@ -27,14 +32,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cpuTimer: Timer? = nil
     private var runnerTimer: Timer? = nil
     private var isShowUsage: Bool = false
+    private var controlStripCat: ControlStripCat? = nil
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
+        controlStripCat = ControlStripCat(image: frames[0])
+        controlStripCat?.show()
         startRunning()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         stopRunning()
+        controlStripCat?.hide()
     }
 
     private func updateUsageDescription() {
@@ -112,6 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func next() {
         index = (index + 1) % frames.count
         statusItem.button?.image = frames[index]
+        controlStripCat?.setFrame(frames[index])
     }
 
     private func startRunning() {
