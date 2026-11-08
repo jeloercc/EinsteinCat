@@ -2,116 +2,113 @@
 
 <p align="center"><img src="Resources/cat_page0.png" width="112" alt="EinsteinCat"></p>
 
-Un gato que corre en la barra de menú de macOS: entre más se usa el CPU, más rápido corre.
-También aparece un gatito animado en la tira de control de la Touch Bar.
+A cat that runs in the macOS menu bar: the more CPU is used, the faster it runs.
+It also shows an animated kitten in the Touch Bar's Control Strip.
 
-Está basado en [Menubar RunCat](https://github.com/Kyome22/menubar_runcat) de Takuto Nakamura
-(Apache-2.0) y usa sus mismas animaciones.
+Based on [Menubar RunCat](https://github.com/Kyome22/menubar_runcat) by Takuto Nakamura
+(Apache-2.0), using the same animation frames.
 
-## Qué hace
+## Features
 
-- **Barra de menú:** el gato corre más rápido cuanto más se usa el CPU. Mide el CPU cada 5 segundos.
-- **Menú del gato:**
-  - *Show CPU Usage* muestra el % de CPU al lado del gato.
-  - *About* abre el panel "Acerca de".
-  - *Quit* cierra la app.
-- **Touch Bar:** un gatito animado en la tira de control (la parte derecha de la Touch Bar).
-  Usa **APIs privadas** de macOS, como se explica abajo.
-- No aparece en el Dock ni en Cmd-Tab (`LSUIElement`).
+- **Menu bar:** the cat runs faster as CPU usage goes up. CPU is sampled every 5 seconds.
+- **Cat menu:**
+  - *Show CPU Usage* shows the CPU % next to the cat.
+  - *About* opens the About panel.
+  - *Quit* closes the app.
+- **Touch Bar:** an animated kitten in the Control Strip (the right side of the Touch Bar).
+  This uses **private macOS APIs** (see below).
+- Doesn't show up in the Dock or in Cmd-Tab (`LSUIElement`).
 
-## Requisitos
+## Requirements
 
-- macOS 15 (Sequoia) en una Mac Intel (`x86_64`).
-- Command Line Tools de Apple, que traen `swiftc`. **No hace falta Xcode.**
-- Una Touch Bar, solo para la parte de la Touch Bar. Sin ella, la barra de menú funciona igual.
+- macOS 15 (Sequoia) on an Intel Mac (`x86_64`).
+- Apple's Command Line Tools, which include `swiftc`. **Xcode is not needed.**
+- A Touch Bar, only for the Touch Bar part. The menu bar part works without one.
 
-## Compilar y ejecutar
+## Build and run
 
 ```sh
-./build.sh                    # crea build/EinsteinCat.app
-open build/EinsteinCat.app    # la abre como app normal
+./build.sh                    # creates build/EinsteinCat.app
+open build/EinsteinCat.app    # launches it like a regular app
 ```
 
-Para ver los mensajes de la app (útil para depurar), ábrela desde la terminal:
+To see the app's log messages (handy for debugging), run it from the terminal instead:
 
 ```sh
 build/EinsteinCat.app/Contents/MacOS/EinsteinCat
 ```
 
-### Qué hace `build.sh`
+### What `build.sh` does
 
-Hace a mano lo que Xcode haría por dentro:
+It does by hand what Xcode would normally do:
 
-1. Borra `build/EinsteinCat.app` si ya existe y crea la estructura `Contents/MacOS` y `Contents/Resources`.
-2. Compila con `swiftc -swift-version 5`. El código original es Swift 5.
-   - `-import-objc-header Sources/TouchBarPrivate.h` le da a Swift las declaraciones de las APIs privadas.
-3. Copia `Info.plist` y los PNG del gato.
-4. Revisa el plist con `plutil -lint`.
-5. Firma la app ad-hoc con `codesign --sign -`, sin certificado.
+1. Deletes `build/EinsteinCat.app` if it exists, then creates `Contents/MacOS` and `Contents/Resources`.
+2. Compiles with `swiftc -swift-version 5`, since the original code is Swift 5.
+   - `-import-objc-header Sources/TouchBarPrivate.h` gives Swift the private API declarations.
+3. Copies `Info.plist` and the cat PNGs into the bundle.
+4. Checks the plist with `plutil -lint`.
+5. Signs the app ad-hoc with `codesign --sign -` (no certificate).
 
-## Estructura
+## Project layout
 
 ```
 EinsteinCat/
 ├── Sources/
-│   ├── main.swift            arranque de la app (original)
-│   ├── AppDelegate.swift     barra de menú y animación (original, modificado)
-│   ├── CPU.swift             medición del CPU con host_statistics (original)
-│   ├── TouchBar.swift        gatito en la tira de control (nuevo)
-│   └── TouchBarPrivate.h     declaraciones de las APIs privadas de la Touch Bar (nuevo)
-├── Resources/                cat_page0.png … cat_page4.png (5 cuadros de la animación)
+│   ├── main.swift            app entry point (original)
+│   ├── AppDelegate.swift     menu bar item and animation (original, modified)
+│   ├── CPU.swift             CPU usage via host_statistics (original)
+│   ├── TouchBar.swift        kitten in the Control Strip (new)
+│   └── TouchBarPrivate.h     private Touch Bar API declarations (new)
+├── Resources/                cat_page0.png … cat_page4.png (the 5 animation frames)
 ├── Info.plist
 ├── build.sh
-├── CLAUDE.md                 contexto y plan del proyecto
+├── CLAUDE.md                 project context and plan
 └── LICENSE                   Apache-2.0
 ```
 
-## La Touch Bar y las APIs privadas
+## The Touch Bar and private APIs
 
-macOS no tiene una forma pública de que una app ponga algo en la tira de control. EinsteinCat usa
-lo mismo que [MTMR](https://github.com/Toxblh/MTMR):
+macOS has no public way for an app to put an item in the Control Strip. EinsteinCat uses
+the same approach as [MTMR](https://github.com/Toxblh/MTMR):
 
-| API | Tipo | Cómo se usa |
+| API | Kind | How it's used |
 |---|---|---|
-| `+[NSTouchBarItem addSystemTrayItem:]` / `removeSystemTrayItem:` | Métodos privados de AppKit | Declarados en `TouchBarPrivate.h` |
-| `DFRElementSetControlStripPresenceForIdentifier` | Función C privada de `DFRFoundation` | Se carga con `dlopen`/`dlsym` al arrancar |
+| `+[NSTouchBarItem addSystemTrayItem:]` / `removeSystemTrayItem:` | Private AppKit methods | Declared in `TouchBarPrivate.h` |
+| `DFRElementSetControlStripPresenceForIdentifier` | Private C function in `DFRFoundation` | Loaded at launch with `dlopen`/`dlsym` |
 
-`DFRFoundation` no se puede enlazar al compilar, porque desde macOS 11 su binario no está en
-el disco: vive en la caché compartida de dyld. Por eso se carga en tiempo de ejecución.
-Si no se encuentra, la app lo avisa en el registro y la barra de menú sigue funcionando.
+`DFRFoundation` can't be linked at build time: since macOS 11 its binary isn't on disk,
+it lives in the dyld shared cache. That's why it's loaded at runtime. If it can't be found,
+the app logs a warning and the menu bar cat keeps working.
 
-Como son APIs privadas, **Apple puede cambiarlas o quitarlas** en cualquier versión de macOS.
+Because these APIs are private, **Apple can change or remove them** in any macOS release.
 
-### Avisos
+### Notes
 
-- **MTMR y EinsteinCat no pueden estar abiertos a la vez.** Mientras MTMR muestra su barra,
-  tapa la tira de control.
-- La tira de control siempre está a la derecha. La posición del gatito la decide macOS.
-- La animación de la Touch Bar se limita a 30 cuadros por segundo para no gastar CPU de más.
+- **MTMR and EinsteinCat can't run at the same time.** While MTMR shows its bar, it covers the Control Strip.
+- The Control Strip is always on the right. macOS decides where the kitten goes.
+- The Touch Bar animation is capped at 30 frames per second to avoid wasting CPU.
 
-## Estado
+## Status
 
-| Fase | Qué | Estado |
+| Phase | What | Status |
 |---|---|---|
-| 0 | Herramientas y recursos | ✅ |
-| 1 | `Info.plist` + `build.sh`: el gato corre en la barra de menú | ✅ |
-| 2 | Gatito animado en la tira de control de la Touch Bar | En curso |
-| 3 | Al tocarlo, el gato cruza la Touch Bar | Pendiente |
-| 4 | Instalar en `/Applications` y abrir al iniciar sesión | Pendiente |
+| 0 | Tools and resources | ✅ |
+| 1 | `Info.plist` + `build.sh`: the cat runs in the menu bar | ✅ |
+| 2 | Animated kitten in the Touch Bar's Control Strip | In progress |
+| 3 | Tapping the kitten makes the cat run across the Touch Bar | Planned |
+| 4 | Install to `/Applications` and launch at login | Planned |
 
-## Problemas conocidos
+## Known issues
 
-- **No se detiene al dormir la Mac.** Viene del original: `setNotifications()` existe pero nunca se llama.
-- El gatito de la Touch Bar **no siempre apareció de inmediato** en las pruebas, y todavía no se sabe por qué.
-- La app usó entre 5 % y 8 % de un núcleo en una medición rápida. Falta ver cuánto de eso es la Touch Bar.
-- Los textos del menú siguen en inglés ("Menubar RunCat") y la app no tiene ícono propio.
-- Al tocar el gatito de la Touch Bar solo se escribe un mensaje en el registro. La acción real es la Fase 3.
+- **It doesn't pause when the Mac sleeps.** This comes from the original: `setNotifications()` exists but is never called.
+- During testing, the Touch Bar kitten **didn't always show up right away**. The cause is still unknown.
+- In a quick measurement the app used 5–8 % of one core. How much of that is the Touch Bar hasn't been checked yet.
+- The menu still says "Menubar RunCat" and the app has no icon of its own.
+- Tapping the Touch Bar kitten only writes a log message for now. The real action is phase 3.
 
-## Créditos y licencia
+## Credits and license
 
-- Código e imágenes originales: **Takuto Nakamura**, [Menubar RunCat](https://github.com/Kyome22/menubar_runcat),
-  licencia [Apache-2.0](LICENSE). Los archivos originales conservan su encabezado de copyright, y los
-  que se cambiaron lo indican en el encabezado.
-- La forma de usar las APIs privadas de la Touch Bar está basada en [MTMR](https://github.com/Toxblh/MTMR)
-  de Anton Palgunov.
-- EinsteinCat se distribuye bajo la misma licencia Apache-2.0.
+- Original code and images: **Takuto Nakamura**, [Menubar RunCat](https://github.com/Kyome22/menubar_runcat),
+  licensed under [Apache-2.0](LICENSE). Original files keep their copyright headers, and modified files say so in their header.
+- The private Touch Bar API usage is based on [MTMR](https://github.com/Toxblh/MTMR) by Anton Palgunov.
+- EinsteinCat is released under the same Apache-2.0 license.
