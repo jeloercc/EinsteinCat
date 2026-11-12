@@ -20,9 +20,10 @@ swiftc -swift-version 5 \
        Sources/*.swift \
        -o "$APP/Contents/MacOS/EinsteinCat"
 
-# 3. Copiar Info.plist y las imágenes.
+# 3. Copiar Info.plist, imágenes e icono.
 cp Info.plist "$APP/Contents/Info.plist"
 cp Resources/*.png "$APP/Contents/Resources/"
+cp Resources/*.icns "$APP/Contents/Resources/" 2>/dev/null || true
 
 # 4. Revisar que el plist sea válido.
 plutil -lint "$APP/Contents/Info.plist"
@@ -32,3 +33,12 @@ codesign --force --sign - "$APP"
 codesign --verify --verbose "$APP"
 
 echo "Listo: $APP"
+
+# 6. Instalación opcional en /Applications si se pasa el argumento --install
+if [[ "${1:-}" == "--install" ]]; then
+    echo "Instalando en /Applications..."
+    rm -rf "/Applications/EinsteinCat.app"
+    cp -R "$APP" "/Applications/EinsteinCat.app"
+    touch "/Applications/EinsteinCat.app"
+    echo "Instalado con éxito en /Applications/EinsteinCat.app"
+fi

@@ -11,11 +11,24 @@
 */
 
 #import <AppKit/AppKit.h>
+#import <libproc.h>
 
 @interface NSTouchBarItem (EinsteinCatPrivate)
 
 // Agrega / quita un ítem de la "tira de control" (la parte derecha de la Touch Bar).
 + (void)addSystemTrayItem:(NSTouchBarItem *)item;
 + (void)removeSystemTrayItem:(NSTouchBarItem *)item;
+
+@end
+
+@interface NSTouchBar (EinsteinCatPrivate)
+
++ (void)presentSystemModalTouchBar:(NSTouchBar *)touchBar
+                         placement:(long long)placement
+           systemTrayItemIdentifier:(NSTouchBarItemIdentifier)identifier;
++ (void)presentSystemModalTouchBar:(NSTouchBar *)touchBar
+           systemTrayItemIdentifier:(NSTouchBarItemIdentifier)identifier;
++ (void)dismissSystemModalTouchBar:(NSTouchBar *)touchBar;
++ (void)minimizeSystemModalTouchBar:(NSTouchBar *)touchBar;
 
 @end

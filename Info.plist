@@ -6,6 +6,8 @@
 	<string>EinsteinCat</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.jeloercc.einsteincat</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleName</key>
 	<string>EinsteinCat</string>
 	<key>CFBundlePackageType</key>
